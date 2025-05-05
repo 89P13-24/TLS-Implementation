@@ -1,0 +1,12 @@
+{
+    "Miner_1": {
+        "blocks_mined": 1,
+        "total_rewards": 10,
+        "joined_at": 1746469689.344586
+    },
+    "Miner_4": {
+        "blocks_mined": 1,
+        "total_rewards": 10,
+        "joined_at": 1746470272.401118
+    }
+}

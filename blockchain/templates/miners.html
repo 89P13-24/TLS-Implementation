@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Miner Leaderboard</title>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h2>🧱 Recent Blocks (Last 10)</h2>
+    <table>
+        <tr>
+            <th>Index</th>
+            <th>Miner</th>
+            <th>Nonce</th>
+            <th>Hash</th>
+        </tr>
+        {% for block in chain %}
+        <tr>
+            <td>{{ block.index }}</td>
+            <td>{{ block.miner }}</td>
+            <td>{{ block.nonce }}</td>
+            <td style="font-family: monospace">{{ block.hash[:16] }}...</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>💰 Miner Wallets</h2>
+    <table>
+        <tr>
+            <th>Miner</th>
+            <th>Balance</th>
+        </tr>
+        {% for miner, balance in wallets.items() %}
+        <tr>
+            <td>{{ miner }}</td>
+            <td>{{ balance }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>📊 Miner Stats</h2>
+    <table>
+        <tr>
+            <th>Miner</th>
+            <th>Blocks Mined</th>
+            <th>Total Rewards</th>
+            <th>Joined At</th>
+        </tr>
+        {% for miner, stats in miners.items() %}
+        <tr>
+            <td>{{ miner }}</td>
+            <td>{{ stats.blocks_mined }}</td>
+            <td>{{ stats.total_rewards }}</td>
+            <td>{{ stats.joined_at | round(2) }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
