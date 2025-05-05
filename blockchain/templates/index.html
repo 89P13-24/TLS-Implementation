@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Healthcare Blockchain System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 1000px;
+            margin-top: 2rem;
+        }
+        .card {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+            border: none;
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .timeline-card {
+            border-left: 4px solid #0d6efd;
+            margin-bottom: 1rem;
+        }
+        .btn-primary {
+            background-color: #0d6efd;
+            border: none;
+        }
+        .status-message {
+            animation: fadeOut 3s forwards;
+            transition: opacity 0.5s;
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">Healthcare Blockchain System</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row mt-4">
+            <!-- Add Record Section -->
+            <div class="col-md-6">
+                <div class="card p-4">
+                    <h4 class="mb-4">Add Patient Record</h4>
+                    <form id="recordForm">
+                        <div class="mb-3">
+                            <label class="form-label">Patient ID</label>
+                            <input type="text" class="form-control" id="pid" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Patient Name</label>
+                            <input type="text" class="form-control" id="pname" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Record Type</label>
+                            <select class="form-select" id="recordType">
+                                <option value="diagnosis">Diagnosis</option>
+                                <option value="prescription">Prescription</option>
+                                <option value="lab_result">Lab Result</option>
+                                <option value="surgery">Surgery</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Record Details</label>
+                            <textarea class="form-control" id="rec" rows="3" required></textarea>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="addRecord()">Add Record</button>
+                    </form>
+                    <div id="status" class="alert alert-success mt-3" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Search Section -->
+            <div class="col-md-6">
+                <div class="card p-4">
+                    <h4 class="mb-4">Search Patient History</h4>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="searchId" placeholder="Enter Patient ID">
+                        <button class="btn btn-primary" onclick="getPatient()">Search</button>
+                    </div>
+                </div>
+                
+                <div id="patientInfo" class="card p-4 mt-3" style="display: none;">
+                    <h5>Patient Information</h5>
+                    <div id="patientDetails"></div>
+                </div>
+
+                <div id="timeline" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function addRecord() {
+            const pid = document.getElementById('pid').value;
+            const pname = document.getElementById('pname').value;
+            const recordType = document.getElementById('recordType').value;
+            const rec = document.getElementById('rec').value;
+            
+            const recordData = {
+                patient_id: pid,
+                patient_name: pname,
+                record_type: recordType,
+                record: rec,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const res = await fetch('/add_record', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(recordData)
+                });
+                const data = await res.json();
+                const status = document.getElementById('status');
+                status.style.display = 'block';
+                status.innerText = `Record Added Successfully - Block #${data.index}`;
+                setTimeout(() => { status.style.display = 'none'; }, 3000);
+                
+                // Clear form
+                document.getElementById('recordForm').reset();
+            } catch (error) {
+                alert('Error adding record: ' + error.message);
+            }
+        }
+
+        async function getPatient() {
+            const id = document.getElementById('searchId').value;
+            try {
+                const res = await fetch('/get_patient/' + id);
+                const records = await res.json();
+                
+                if (records.length > 0) {
+                    document.getElementById('patientInfo').style.display = 'block';
+                    let html = '';
+                    records.forEach(r => {
+                        const date = new Date(r.timestamp * 1000).toLocaleString();
+                        const recordType = r.data.record_type || 'General';
+                        
+                        html += `
+                            <div class="timeline-card card p-3">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="text-primary">${recordType}</h6>
+                                    <small class="text-muted">${date}</small>
+                                </div>
+                                <p class="mb-0">${r.data.record}</p>
+                            </div>`;
+                    });
+                    document.getElementById('timeline').innerHTML = html;
+                    
+                    // Display patient info
+                    const patientName = records[0].data.patient_name || 'Unknown';
+                    document.getElementById('patientDetails').innerHTML = `
+                        <p><strong>ID:</strong> ${id}</p>
+                        <p><strong>Name:</strong> ${patientName}</p>
+                        <p><strong>Total Records:</strong> ${records.length}</p>
+                    `;
+                } else {
+                    document.getElementById('timeline').innerHTML = '<div class="alert alert-info">No records found for this patient.</div>';
+                    document.getElementById('patientInfo').style.display = 'none';
+                }
+            } catch (error) {
+                alert('Error fetching records: ' + error.message);
+            }
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
