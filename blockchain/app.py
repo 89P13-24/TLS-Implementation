@@ -36,7 +36,7 @@ class Blockchain:
         self.miners = self.load_miners()
 
         if not self.chain:
-            print("⚠️  No chain file found. Creating Genesis Block.")
+            print(" No chain file found. Creating Genesis Block.")
             self.create_block(data='Genesis Block')
             self.save_chain()
 
@@ -49,21 +49,20 @@ class Blockchain:
             'nonce': 0
         }
 
-        # Set random difficulty between 4 and 5
+
         self.difficulty = random.randint(4, 5)
-        print(f"\n⛏️  Starting mining for block {block['index']} with difficulty {self.difficulty}...")
+        self.reward_per_block = 10 ** (self.difficulty-3) 
+        print(f"\n Starting mining for block {block['index']} with difficulty {self.difficulty}...")
 
         start_time = time()
         block = self.proof_of_work(block)
         end_time = time()
-        print(f"✅ Block {block['index']} mined by {block['miner']} "
+        print(f" Block {block['index']} mined by {block['miner']} "
               f"in {end_time - start_time:.2f}s with nonce {block['nonce']}")
 
-        # Reward the miner
         miner_id = block['miner']
         self.wallets[miner_id] = self.wallets.get(miner_id, 0) + self.reward_per_block
 
-        # Update miner tracking
         if miner_id not in self.miners:
             self.miners[miner_id] = {
                 "blocks_mined": 0,

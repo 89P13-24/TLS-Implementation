@@ -123,5 +123,50 @@
         "nonce": 904857,
         "hash": "0000081fc5b5334486dadd628eee863feb63c6326055b2303c25c81fc1332a73",
         "miner": "Miner_4"
+    },
+    {
+        "index": 10,
+        "timestamp": 1746500282.521782,
+        "data": {
+            "patient_id": "9",
+            "patient_name": "Sean Williams",
+            "record_type": "lab_result",
+            "record": "Result released for Full Body Checkup",
+            "timestamp": "2025-05-06T02:58:02.516Z"
+        },
+        "previous_hash": "0000081fc5b5334486dadd628eee863feb63c6326055b2303c25c81fc1332a73",
+        "nonce": 920197,
+        "hash": "000008683df46b5cc314b81d106d3c370d1e367d3e29c8c196a745b5df8d0a14",
+        "miner": "Miner_2"
+    },
+    {
+        "index": 11,
+        "timestamp": 1746500554.862731,
+        "data": {
+            "patient_id": "10",
+            "patient_name": "John Bates",
+            "record_type": "prescription",
+            "record": "Given prescription for persistent shoulder pain",
+            "timestamp": "2025-05-06T03:02:34.858Z"
+        },
+        "previous_hash": "000008683df46b5cc314b81d106d3c370d1e367d3e29c8c196a745b5df8d0a14",
+        "nonce": 305925,
+        "hash": "0000ebe723342ea33430fe0245f8a825b03621266eddc3a3dc9bc8cc0c55c664",
+        "miner": "Miner_2"
+    },
+    {
+        "index": 12,
+        "timestamp": 1746500635.376042,
+        "data": {
+            "patient_id": "11",
+            "patient_name": "Alan James",
+            "record_type": "diagnosis",
+            "record": "Diagnosed with pneumonia ",
+            "timestamp": "2025-05-06T03:03:55.372Z"
+        },
+        "previous_hash": "0000ebe723342ea33430fe0245f8a825b03621266eddc3a3dc9bc8cc0c55c664",
+        "nonce": 669317,
+        "hash": "00006899f55dd183ffdd57c1bffcd7c1fe0c95ef410be455d23bb14df6d2da77",
+        "miner": "Miner_1"
     }
 ]
