@@ -84,6 +84,7 @@ def miner_worker(block_data, difficulty, result_dict, miner_id):
             return
         nonce += 1
 
+
 class Blockchain:
     def __init__(self, chain_file="chain.json"):
         generate_keys()
@@ -109,9 +110,11 @@ class Blockchain:
             'previous_hash': self.chain[-1]['hash'] if self.chain else '0',
             'nonce': 0
         }
+
         self.difficulty = random.randint(4, 5)
         self.reward_per_block = 10 ** (self.difficulty - 3)
         print(f"\nStarting mining for block {block['index']} with difficulty {self.difficulty}...")
+
         start_time = time()
         block = self.proof_of_work(block)
         end_time = time()
@@ -126,33 +129,50 @@ class Blockchain:
                 "total_rewards": 0,
                 "joined_at": time()
             }
+
         self.miners[miner_id]["blocks_mined"] += 1
         self.miners[miner_id]["total_rewards"] += self.reward_per_block
         self.save_miners()
 
-        block_data = json.dumps(block, sort_keys=True).encode()
-        block['signature'] = sign_data(block_data, self.private_key).hex()
+        block_copy_for_signing = block.copy()
+        block_copy_for_signing.pop('signature', None)
+        block_string_to_sign = json.dumps(block_copy_for_signing, sort_keys=True).encode()
+        block['signature'] = sign_data(block_string_to_sign, self.private_key).hex()
 
         self.chain.append(block)
         self.save_chain()
         return block
+
+
 
     def proof_of_work(self, block):
         manager = multiprocessing.Manager()
         result_dict = manager.dict()
         result_dict['winner'] = False
         processes = []
-        block_data = {k: v for k, v in block.items() if k != 'hash'}
+
+        # Only include the fields that will be signed and hashed — exclude 'hash' and 'signature'
+        base_block_data = {
+            'index': block['index'],
+            'timestamp': block['timestamp'],
+            'data': block['data'],
+            'previous_hash': block['previous_hash'],
+            'nonce': 0  # will be varied in worker
+        }
+
         for i in range(4):
-            p = multiprocessing.Process(target=miner_worker, args=(block_data, self.difficulty, result_dict, f"Miner_{i+1}"))
+            p = multiprocessing.Process(target=miner_worker,
+                                        args=(base_block_data, self.difficulty, result_dict, f"Miner_{i+1}"))
             p.start()
             processes.append(p)
         for p in processes:
             p.join()
+
         block['nonce'] = result_dict['nonce']
         block['hash'] = result_dict['hash']
         block['miner'] = result_dict['miner_id']
         return block
+
 
     def is_valid_block(self, block):
         signature = bytes.fromhex(block['signature'])
@@ -186,6 +206,61 @@ class Blockchain:
     def save_miners(self):
         with open(self.miner_file, 'w') as f:
             json.dump(self.miners, f, indent=4)
+
+    def is_valid_block(self, block, previous_block):
+        try:
+            # 1. Check previous hash linkage
+            if block['previous_hash'] != previous_block['hash']:
+                print("Previous hash mismatch")
+                return False
+
+            # 2. Check proof-of-work
+            if not block['hash'].startswith('0' * self.difficulty):
+                print("Proof-of-work failed")
+                return False
+
+            # 3. Check hash consistency
+            block_copy = block.copy()
+            signature = bytes.fromhex(block_copy.pop('signature'))
+            stored_hash = block_copy['hash']
+            base_block_data = {
+                'index': block_copy['index'],
+                'timestamp': block_copy['timestamp'],
+                'data': block_copy['data'],
+                'previous_hash': block_copy['previous_hash'],
+                'nonce': block_copy['nonce']  
+            }
+            del block_copy['hash']
+            print("The original block copy data to be hashed:", base_block_data)
+            computed_hash = hashlib.sha256(json.dumps(base_block_data, sort_keys=True).encode()).hexdigest()
+            if computed_hash != stored_hash:
+                print(f"Block index: {block['index']}")
+                print(f"Computed_hash: {computed_hash}")
+                print(f"Stored_hash: {stored_hash}")
+                print("Hash mismatch")
+                return False
+
+            # 4. Verify RSA signature
+            signed_data = json.dumps({**block_copy, 'hash': stored_hash}, sort_keys=True).encode()
+            if not verify_signature(signed_data, signature, self.public_key):
+                print("Signature verification failed")
+                return False
+            else:
+                return True
+            
+        except Exception as e:
+            print(f"Validation error: {e}")
+            return False
+
+    def is_valid_chain(self):
+        for i in range(1, len(self.chain)):
+            if not self.is_valid_block(self.chain[i], self.chain[i - 1]):
+                print(f"Invalid block at index {i}")
+                print("Block:", json.dumps(self.chain[i], indent=2))
+                print("Previous:", json.dumps(self.chain[i - 1], indent=2))
+
+                return False
+        return True
 
 
 @app.route('/')
@@ -228,6 +303,14 @@ def miners_page():
 def explorer():
     chain = blockchain.get_chain()
     return render_template('explorer.html', chain=chain)
+
+@app.route('/validate_chain', methods=['GET'])
+def validate_chain():
+    is_valid = blockchain.is_valid_chain()
+    return jsonify({
+        'valid': is_valid,
+        'message': "The blockchain is valid." if is_valid else "The blockchain is invalid!"
+    })
 
 
 if __name__ == '__main__':
