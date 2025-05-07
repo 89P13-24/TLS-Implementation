@@ -187,7 +187,6 @@ class Blockchain:
         with open(self.miner_file, 'w') as f:
             json.dump(self.miners, f, indent=4)
 
-blockchain = Blockchain()
 
 @app.route('/')
 def index():
@@ -225,8 +224,15 @@ def miners_page():
     miners = blockchain.miners
     return render_template('miners.html', chain=chain[-10:], wallets=wallets, miners=miners)
 
+@app.route('/explorer')
+def explorer():
+    chain = blockchain.get_chain()
+    return render_template('explorer.html', chain=chain)
+
+
 if __name__ == '__main__':
     multiprocessing.set_start_method("fork")
+    blockchain = Blockchain()
     app.run(
         host='0.0.0.0',
         port=8080,
