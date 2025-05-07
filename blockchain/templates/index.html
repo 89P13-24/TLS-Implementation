@@ -148,11 +148,12 @@
 
     <script>
         async function addRecord() {
+            const addBtn = document.querySelector('#recordForm button');
             const pid = document.getElementById('pid').value;
             const pname = document.getElementById('pname').value;
             const recordType = document.getElementById('recordType').value;
             const rec = document.getElementById('rec').value;
-
+        
             const recordData = {
                 patient_id: pid,
                 patient_name: pname,
@@ -160,24 +161,42 @@
                 record: rec,
                 timestamp: new Date().toISOString()
             };
-
+        
+            // Disable the button and show loading text
+            addBtn.disabled = true;
+            addBtn.innerText = "Adding...";
+        
             try {
                 const res = await fetch('/add_record', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(recordData)
                 });
+        
                 const data = await res.json();
+        
                 const status = document.getElementById('status');
                 status.style.display = 'block';
-                status.innerText = `✅ Record Added Successfully — Block #${data.index}`;
-                setTimeout(() => { status.style.display = 'none'; }, 3000);
+                status.className = 'alert alert-success mt-3';
+                status.innerText = `✅ Record added successfully to Block #${data.index}`;
+                
                 document.getElementById('recordForm').reset();
+        
             } catch (error) {
-                alert('Error adding record: ' + error.message);
+                const status = document.getElementById('status');
+                status.style.display = 'block';
+                status.className = 'alert alert-danger mt-3';
+                status.innerText = `❌ Error adding record: ${error.message}`;
+            } finally {
+                // Re-enable the button and reset text
+                addBtn.disabled = false;
+                addBtn.innerText = "Add Record";
+        
+                // Fade out status after 3 seconds
+                setTimeout(() => { document.getElementById('status').style.display = 'none'; }, 3000);
             }
         }
-
+        
         async function getPatient() {
             const id = document.getElementById('searchId').value;
             try {
