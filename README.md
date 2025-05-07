@@ -12,6 +12,7 @@ A secure, blockchain-based patient record system built with Flask, featuring:
 ---
 
 ## Project Structure
+```
 blockchain/
 ├── app.py # Main Flask application
 ├── templates/ # HTML templates (UI)
@@ -24,7 +25,7 @@ blockchain/
 ├── public_key.pem # RSA public key
 ├── cert.pem # TLS certificate (self-signed)
 └── key.pem # TLS private key
-
+```
 
 ---
 
