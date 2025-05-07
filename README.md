@@ -18,6 +18,7 @@ blockchain/
 ├── templates/ # HTML templates (UI)
 │ ├── index.html
 │ └── miners.html
+| |__ explorer.html
 ├── static/ # Optional static files (CSS/JS)
 ├── chain.json # Stores the blockchain data
 ├── miners.json # Tracks miner stats and rewards
