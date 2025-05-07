@@ -29,13 +29,11 @@
             background-color: #0d6efd;
             border: none;
         }
-        .status-message {
-            animation: fadeOut 3s forwards;
-            transition: opacity 0.5s;
-        }
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1055;
         }
     </style>
 </head>
@@ -63,7 +61,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Record Type</label>
-                            <select class="form-select" id="recordType">
+                            <select class="form-select" id="recordType" required>
                                 <option value="diagnosis">Diagnosis</option>
                                 <option value="prescription">Prescription</option>
                                 <option value="lab_result">Lab Result</option>
@@ -74,9 +72,11 @@
                             <label class="form-label">Record Details</label>
                             <textarea class="form-control" id="rec" rows="3" required></textarea>
                         </div>
-                        <button type="button" class="btn btn-primary w-100" onclick="addRecord()">Add Record</button>
+                        <button type="button" class="btn btn-primary w-100" id="addBtn" onclick="addRecord()" disabled>
+                            <span id="addBtnText">Add Record</span>
+                            <span id="spinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+                        </button>
                     </form>
-                    <div id="status" class="alert alert-success mt-3" style="display: none;"></div>
                 </div>
             </div>
 
@@ -87,6 +87,9 @@
                     <div class="input-group mb-3">
                         <input type="text" class="form-control" id="searchId" placeholder="Enter Patient ID">
                         <button class="btn btn-primary" onclick="getPatient()">Search</button>
+                    </div>
+                    <div id="searchLoading" style="display: none;">
+                        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
                     </div>
                 </div>
 
@@ -134,26 +137,41 @@
                                 Validate Blockchain Integrity
                                 <button class="btn btn-sm btn-outline-success" onclick="validateChain()">Check</button>
                             </li>
-                            
                         </ul>
-                        
+                        <div id="chainValidationStatus" class="alert mt-3" style="display: none;"></div>
                     </div>
                 </div>
-                <div id="chainValidationStatus" class="alert mt-3" style="display: none;"></div>
-
             </div>
         </div>
+    </div>
 
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div id="toastSuccess" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="toastMessage">✅ Record added successfully.</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
     </div>
 
     <script>
+        const form = document.getElementById('recordForm');
+        const addBtn = document.getElementById('addBtn');
+        const addBtnText = document.getElementById('addBtnText');
+        const spinner = document.getElementById('spinner');
+
+        form.addEventListener('input', () => {
+            const isValid = [...form.elements].every(el => !el.required || el.value.trim() !== '');
+            addBtn.disabled = !isValid;
+        });
+
         async function addRecord() {
-            const addBtn = document.querySelector('#recordForm button');
-            const pid = document.getElementById('pid').value;
-            const pname = document.getElementById('pname').value;
+            const pid = document.getElementById('pid').value.trim();
+            const pname = document.getElementById('pname').value.trim();
             const recordType = document.getElementById('recordType').value;
-            const rec = document.getElementById('rec').value;
-        
+            const rec = document.getElementById('rec').value.trim();
+
             const recordData = {
                 patient_id: pid,
                 patient_name: pname,
@@ -161,55 +179,50 @@
                 record: rec,
                 timestamp: new Date().toISOString()
             };
-        
-            // Disable the button and show loading text
-            addBtn.disabled = true;
-            addBtn.innerText = "Adding...";
-        
+
             try {
+                addBtn.disabled = true;
+                spinner.style.display = 'inline-block';
+                addBtnText.textContent = 'Adding...';
+
                 const res = await fetch('/add_record', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(recordData)
                 });
-        
                 const data = await res.json();
-        
-                const status = document.getElementById('status');
-                status.style.display = 'block';
-                status.className = 'alert alert-success mt-3';
-                status.innerText = `✅ Record added successfully to Block #${data.index}`;
-                
-                document.getElementById('recordForm').reset();
-        
+
+                showToast(`✅ Record Added Successfully — Block #${data.index}`);
+                form.reset();
+                addBtnText.textContent = 'Add Record';
+                spinner.style.display = 'none';
             } catch (error) {
-                const status = document.getElementById('status');
-                status.style.display = 'block';
-                status.className = 'alert alert-danger mt-3';
-                status.innerText = `❌ Error adding record: ${error.message}`;
+                alert('Error adding record: ' + error.message);
             } finally {
-                // Re-enable the button and reset text
-                addBtn.disabled = false;
-                addBtn.innerText = "Add Record";
-        
-                // Fade out status after 3 seconds
-                setTimeout(() => { document.getElementById('status').style.display = 'none'; }, 3000);
+                addBtn.disabled = true;
+                addBtnText.textContent = 'Add Record';
+                spinner.style.display = 'none';
             }
         }
-        
+
         async function getPatient() {
-            const id = document.getElementById('searchId').value;
+            const id = document.getElementById('searchId').value.trim();
+            if (!id) return;
+
+            document.getElementById('searchLoading').style.display = 'block';
             try {
                 const res = await fetch('/get_patient/' + id);
                 const records = await res.json();
+                const timeline = document.getElementById('timeline');
+                const patientInfo = document.getElementById('patientInfo');
+                const patientDetails = document.getElementById('patientDetails');
 
                 if (records.length > 0) {
-                    document.getElementById('patientInfo').style.display = 'block';
+                    patientInfo.style.display = 'block';
                     let html = '';
                     records.forEach(r => {
                         const date = new Date(r.timestamp * 1000).toLocaleString();
                         const recordType = r.data.record_type || 'General';
-
                         html += `
                             <div class="timeline-card card p-3">
                                 <div class="d-flex justify-content-between">
@@ -219,43 +232,44 @@
                                 <p class="mb-0">${r.data.record}</p>
                             </div>`;
                     });
-                    document.getElementById('timeline').innerHTML = html;
+                    timeline.innerHTML = html;
 
                     const patientName = records[0].data.patient_name || 'Unknown';
-                    document.getElementById('patientDetails').innerHTML = `
+                    patientDetails.innerHTML = `
                         <p><strong>ID:</strong> ${id}</p>
                         <p><strong>Name:</strong> ${patientName}</p>
                         <p><strong>Total Records:</strong> ${records.length}</p>
                     `;
                 } else {
-                    document.getElementById('timeline').innerHTML = '<div class="alert alert-info">No records found for this patient.</div>';
-                    document.getElementById('patientInfo').style.display = 'none';
+                    timeline.innerHTML = '<div class="alert alert-info">No records found for this patient.</div>';
+                    patientInfo.style.display = 'none';
                 }
             } catch (error) {
                 alert('Error fetching records: ' + error.message);
+            } finally {
+                document.getElementById('searchLoading').style.display = 'none';
             }
         }
+
         async function validateChain() {
-        try {
-            const res = await fetch('/validate_chain');
-            const data = await res.json();
-
-            const box = document.getElementById('chainValidationStatus');
-            box.style.display = 'block';
-
-            if (data.valid) {
-                box.className = 'alert alert-success mt-3';
-            } else {
-                box.className = 'alert alert-danger mt-3';
+            try {
+                const res = await fetch('/validate_chain');
+                const data = await res.json();
+                const box = document.getElementById('chainValidationStatus');
+                box.style.display = 'block';
+                box.className = 'alert mt-3 ' + (data.valid ? 'alert-success' : 'alert-danger');
+                box.innerText = data.message;
+                setTimeout(() => { box.style.display = 'none'; }, 5000);
+            } catch (error) {
+                alert("Error validating chain: " + error.message);
             }
-
-            box.innerText = data.message;
-
-            setTimeout(() => { box.style.display = 'none'; }, 5000);
-        } catch (error) {
-            alert("Error validating chain: " + error.message);
         }
-    }
+
+        function showToast(message) {
+            document.getElementById('toastMessage').innerText = message;
+            const toast = new bootstrap.Toast(document.getElementById('toastSuccess'));
+            toast.show();
+        }
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
