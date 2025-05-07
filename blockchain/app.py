@@ -9,9 +9,11 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.exceptions import InvalidSignature
 
+### openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes for creating self-signed certs
+
+
 app = Flask(__name__)
 
-# RSA Key Generation (Run once or ensure files exist)
 def generate_keys():
     if not os.path.exists("private_key.pem") or not os.path.exists("public_key.pem"):
         private_key = rsa.generate_private_key(
@@ -225,4 +227,10 @@ def miners_page():
 
 if __name__ == '__main__':
     multiprocessing.set_start_method("fork")
-    app.run(host='0.0.0.0', debug=True)
+    app.run(
+        host='0.0.0.0',
+        port=8080,
+        debug=True,
+        ssl_context=('cert.pem', 'key.pem')  # 👈 Enables HTTPS
+    )
+
