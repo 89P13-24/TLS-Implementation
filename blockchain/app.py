@@ -151,13 +151,12 @@ class Blockchain:
         result_dict['winner'] = False
         processes = []
 
-        # Only include the fields that will be signed and hashed — exclude 'hash' and 'signature'
         base_block_data = {
             'index': block['index'],
             'timestamp': block['timestamp'],
             'data': block['data'],
             'previous_hash': block['previous_hash'],
-            'nonce': 0  # will be varied in worker
+            'nonce': 0 
         }
 
         for i in range(4):
