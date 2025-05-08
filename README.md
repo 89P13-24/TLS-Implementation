@@ -77,6 +77,8 @@ https://localhost:5000
 - Blockchain Explorer: View recent blocks, miner stats, and signatures.
 
 - TLS Encryption: Ensures secure HTTPS communication.
+
+- Validate Blockchain: Make sure the blockchain is valid at any time
   
 ## Developer Tools
 
