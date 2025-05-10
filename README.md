@@ -92,6 +92,10 @@ https://localhost:5000
 
 - /explorer – Blockchain Explorer UI route.
 
+## Video link
+
+- Watch the video demo at: https://youtu.be/d17syiU7zrk
+
 ##  Notes
 - RSA keys and TLS certs are generated once and reused.
 
