@@ -113,7 +113,11 @@ https://localhost:5000
 
 - Encryption for patient records at rest
 
+## Team Members:
 
+- Soumya Savarn (220150031)
+- Ishan Gupta(220150034)
+- Saptarshi Mukherjee(220150019)
 
 
 
